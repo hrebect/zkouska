@@ -1,1 +1,1 @@
-Bod je uvnitř polygonu
+Bod je mimo polygon

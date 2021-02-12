@@ -5,8 +5,9 @@
 
 import sys, math
 class Point:
-#Class, která nese informaci o souřadnicích bodů
-#Dále jsou zde gettery, settery a reprezentace bodu
+#Class with information about coordinates of points
+#getter, setter and representation functions
+
     def __init__ (self,x=0,y=0):
             self.__x=x
             self.__y=y
@@ -34,12 +35,12 @@ class Point:
         return str(self.__x) + " " + str(self.__y)
 
 class Polygon:
-#Class, která nahraje list bodů a z něj vytvoří polygon definovaný těmito body
+#class that creates polygon from list of points
 
     def __init__(self, points):
         self.__points = points
 
-    #funkce pro získání hran polygonu. Hrany jsou definované okrajovými body
+    #function to obtain edges of polygon. Edges are defined by edge points
     @property
     def edges(self):
         edge_list = []
@@ -49,11 +50,10 @@ class Polygon:
             edge_list.append((p1,p2))
         return edge_list
 
-    def __repr__(self): #polygon je reprezentovan jako list bodů, které ho tvoří
+    def __repr__(self): #polygon is represented as list of points 
         return str(self.__points)
     
-
-    #funkce pro zjištění úhlů polygonu a zjištění, zda je konvexní, když není, ukončí program   
+    #function to obtain information that polygon is convex or not. If not, program will be stoped
     def konvex(self):
         uhly = []
         for i,p in enumerate(self.__points):
@@ -64,20 +64,26 @@ class Polygon:
             if angle < 0:
                 angle += 360
             uhly.append(angle)
-            if all(i > 180 for i in uhly):
-                sys.exit(input('Polygon není konvexní.Stistknete ENTER pro ukonceni'))
+        if all(i > 180 for i in uhly) or all(i < 180 for i in uhly): #if is polygon in CCW orientatin, angles are more than 180 degree
+            return
+        sys.exit(input('Polygon není konvexní.Stistknete ENTER pro ukonceni'))
     
-    #funkce na pro určení, zda je hledaný bod uvnitř, či vně polygonu. Hledaný bod vstupuje jako point
+    #function to obtain information that search point is inside or outside. The seatch point enters into funtion like 'point'
     def contains(self, point):
-        list_result = []
+        result_previous = None
         for edge in self.edges: 
-            result = (point.y - edge[0].y) * (edge[1].x - edge[0].x) - (point.x - edge[0].x) * (edge[1].y - edge[0].y) #vektorový součin
-            list_result.append(result)
-        
-        return all(i <= 0 for i in list_result) #když jsou všechny, čísla záporná, nebo nula, tak vod je uvnitř 
+            result = (point.y - edge[0].y) * (edge[1].x - edge[0].x) - (point.x - edge[0].x) * (edge[1].y - edge[0].y)
+            if result_previous is None:
+                result_previous = result
+            if result * result_previous <= 0:
+                with open('vystup_polygon.txt',mode='w',encoding="UTF-8") as e: 
+                    e.write('Bod je mimo polygon')
+                return
+            result_previous = result
+        with open('vystup_polygon.txt',mode='w',encoding="UTF-8") as e:
+            e.write('Bod je uvnitř polygonu')
 
-
-#nacteni bodů do class Point, první bod v txt souhoru je nacten zclášť jako zkoumaný bod, zbytek do listu, který definuje polygon   
+#loading of points from .txt file to class Point. The first point is the search point and remaining points are vertices of polygon  
 alist=[]
 try:
     with open('vstup_polygon.txt',encoding="UTF-8") as f:
@@ -91,20 +97,13 @@ try:
             coord_int = list(map(int, coord_split))
             alist.append(Point(coord_int[0],coord_int[1]))
            
-except FileNotFoundError: #ukonceni programu, kdyz soubor nebude nalezen
+except FileNotFoundError:  #terminates the program when input file is not found
     sys.exit(input('Soubor se vstupem nenalezen, měl by mít název "vstup_polygon.txt". Stistknete ENTER pro ukonceni'))
 except PermissionError:
     sys.exit(input('Program nemá oprávnění číst soubor se vstupem, stistknete ENTER pro ukonceni'))
-except ValueError: #ukoneceni pri nevalidním vstupu
+except ValueError: #uterminates the program when input is in invalid format
     sys.exit(input('Vstupní soubor obsahuje nepodporovaný formát čísel, stistknete ENTER pro ukonceni'))
 
 q = Polygon(alist)
-
 q.konvex()
-
-#ukladani do .txt souboru
-with open('vystup_polygon.txt',mode='w',encoding="UTF-8") as e:
-    if q.contains(bod):
-        e.write('Bod je uvnitř polygonu')
-    else:
-        e.write('Bod je mimo polygon')
+q.contains(bod)
